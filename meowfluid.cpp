@@ -169,7 +169,7 @@ Fixed<N, M, fast> operator*(Fixed<N, M, fast> a, Fixed<N, M, fast> b) {
 
 template<size_t N, size_t M, bool fast>
 Fixed<N, M, fast> operator/(Fixed<N, M, fast> a, Fixed<N, M, fast> b) {
-  assert(b.v != 0);
+//  assert(b.v != 0);
   return Fixed<N, M, fast>::from_raw(((static_cast<typename Fixed<N, M, fast>::int2N_t>(a.v) * (1 << M))) / b.v);
 }
 
@@ -266,7 +266,7 @@ private:
 
 public:
   meowfluid() = default;
-  void setStop() { stop = true; }
+  void setStop() override { stop = true; }
   void init(const InitArgs &initArgs) override {
     ptr_dirs = std::make_unique<std::array<std::array<int,M>,N>>();
     ptr_field = std::make_unique<std::array<std::array<char,M>,N>>();
@@ -583,10 +583,6 @@ public:
           return {t, prop && end != pair(x, y), end};
         }
       }
-
-      if (dx == 0) {
-        std::cout << x << " " << y << std::endl;
-      }
     }
     last_use[x][y] = UT;
     return {ret, 0, {0, 0}};
@@ -595,7 +591,7 @@ public:
   void save() const override {
 
     ofstream out;
-    out.open("meowfluid.save", std::ios::out);
+    out.open("meowfluid.save", std::ios::binary | std::ios::out);
 
     auto &field = *ptr_field.get();
     auto &dirs = *ptr_dirs.get();
@@ -608,12 +604,13 @@ public:
     size_t MM = M;
     out.write(reinterpret_cast<const char*>(&NN), sizeof(NN));
     out.write(reinterpret_cast<const char*>(&MM), sizeof(MM));
-    out.write(reinterpret_cast<const char*>(&iter), sizeof(iter));
+    out.write(reinterpret_cast<const char*>(&iter), sizeof(size_t));
     out.write(reinterpret_cast<const char*>(&UT), sizeof(UT));
     out.write(reinterpret_cast<const char*>(&g), sizeof(g));
 
 
-    out.write(reinterpret_cast<const char*>(&rho), 256 * sizeof(char));
+    out.write(reinterpret_cast<const char*>(&rho[int('.')]),sizeof(double));
+    out.write(reinterpret_cast<const char*>(&rho[int(' ')]),sizeof(double));
 
     for (size_t i = 0; i < N; ++i) {
       out.write(reinterpret_cast<const char*>(field[i].data()), M * sizeof(char));
@@ -635,7 +632,8 @@ public:
   }
 
   void load() override {
-    fstream in("meowfluid.save", std::ios::in);
+    fstream in("meowfluid.save", std::ios::binary | std::ios::in);
+
     ptr_dirs = std::make_unique<std::array<std::array<int,M>,N>>();
     ptr_field = std::make_unique<std::array<std::array<char,M>,N>>();
     ptr_p = std::make_unique<std::array<std::array<Tp,M>,N>>();
@@ -656,19 +654,19 @@ public:
     in.read(reinterpret_cast<char*>(&NN), sizeof(NN));
     in.read(reinterpret_cast<char*>(&MM), sizeof(MM));
 
-    if (NN != N && MM != M) {
+    if (NN != N || MM != M) {
       std::cout << "Bad size for load" << std::endl;
       exit(0);
       return;
     }
-    rnd = mt19937(1337);
 
     in.read(reinterpret_cast<char*>(&iter), sizeof(iter));
     in.read(reinterpret_cast<char*>(&UT), sizeof(UT));
     in.read(reinterpret_cast<char*>(&g), sizeof(g));
 
 
-    in.read(reinterpret_cast<char*>(&rho), 256 * sizeof(char));
+    in.read(reinterpret_cast<char*>(&rho[int('.')]),sizeof(double));
+    in.read(reinterpret_cast<char*>(&rho[int(' ')]),sizeof(double));
 
     for (size_t i = 0; i < N; ++i) {
       in.read(reinterpret_cast<char*>(field[i].data()), M * sizeof(char));
@@ -687,6 +685,8 @@ public:
     }
 
     in.close();
+
+    rnd = mt19937(1337);
   }
 };
 
@@ -1041,7 +1041,7 @@ public:
   void save() const override {
 
     ofstream out;
-    out.open("meowfluid.save", std::ios::out);
+    out.open("meowfluid.save", std::ios::binary | std::ios::out);
 
     out.write(reinterpret_cast<const char*>(&N), sizeof(N));
     out.write(reinterpret_cast<const char*>(&M), sizeof(M));
@@ -1050,7 +1050,8 @@ public:
     out.write(reinterpret_cast<const char*>(&g), sizeof(g));
 
 
-    out.write(reinterpret_cast<const char*>(&rho), 256 * sizeof(char));
+    out.write(reinterpret_cast<const char*>(&rho[int('.')]),sizeof(double));
+    out.write(reinterpret_cast<const char*>(&rho[int(' ')]),sizeof(double));
 
     for (size_t i = 0; i < N; ++i) {
       out.write(reinterpret_cast<const char*>(field[i].data()), M * sizeof(char));
@@ -1072,7 +1073,7 @@ public:
   }
 
   void load() override {
-    fstream in("meowfluid.save", std::ios::in);
+    fstream in("meowfluid.save", std::ios::binary | std::ios::in);
 
     in.read(reinterpret_cast<char*>(&N), sizeof(N));
     in.read(reinterpret_cast<char*>(&M), sizeof(M));
@@ -1092,7 +1093,8 @@ public:
     in.read(reinterpret_cast<char*>(&g), sizeof(g));
 
 
-    in.read(reinterpret_cast<char*>(&rho), 256 * sizeof(char));
+    in.read(reinterpret_cast<char*>(&rho[int('.')]),sizeof(double));
+    in.read(reinterpret_cast<char*>(&rho[int(' ')]),sizeof(double));
 
     for (size_t i = 0; i < N; ++i) {
       in.read(reinterpret_cast<char*>(field[i].data()), M * sizeof(char));
