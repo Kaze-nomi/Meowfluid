@@ -4,4 +4,4 @@
 
 Есть одна ячейка сохранения, сохраняется при вызове SIGINT (Ctrl + C).
 
-Приме, как запустить из ячейки сохранения: ./meow.out --v-flow-type=Fixed\(32,16\) --v-type=Fixed\(32,16\) --p-type=Fixed\(32,16\) --load
+Пример, как запустить из ячейки сохранения: ./meow.out --v-flow-type=Fixed\(32,16\) --v-type=Fixed\(32,16\) --p-type=Fixed\(32,16\) --load
